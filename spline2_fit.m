@@ -1,5 +1,6 @@
 function [ c ] = spline2_fit( x, y, z, d, knots_x, knots_y, lambda )
-%lambda --- регуляризующий параметр, например 0.005
+%lambda is regularization parameter e.g. 0.005
+
 if nargin < 7
 	lambda = 0;
 end
@@ -20,14 +21,8 @@ ncoeff_x = numel(knots_x) + d - 1;
 ncoeff_y = numel(knots_y) + d - 1;
 B = zeros(numel(x), ncoeff_x*ncoeff_y);
 
-bspline_x = zeros(numel(x), ncoeff_x);
-bspline_y = zeros(numel(x), ncoeff_y);
-parfor j = 1 : ncoeff_x
-	bspline_x(:, j) = bspline(x, j, d, tx, d);
-end
-parfor k = 1 : ncoeff_y
-	bspline_y(:, k) = bspline(y, k, d, ty, d);
-end
+bspline_x = bspline_v2( x, ncoeff_x, d, tx);
+bspline_y = bspline_v2( y, ncoeff_y, d, ty);
 
 for j = 1 : ncoeff_x
     for k = 1 : ncoeff_y
@@ -35,8 +30,6 @@ for j = 1 : ncoeff_x
     end
 end
 
-%(B'*B)\(B'*z);
-%c = B\z; 
 if lambda ~= 0
 	c = (B'*B + lambda*eye(ncoeff_x*ncoeff_y))\(B'*z);
 else

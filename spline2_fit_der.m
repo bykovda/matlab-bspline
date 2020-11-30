@@ -1,13 +1,24 @@
-function [ c ] = spline2_fit_der( x, y, zx, zy, d, knots_x, knots_y, lambda)
-%lambda --- регуляризующий параметр, например 0.005
+function c = spline2_fit_der( x, y, zx, zy, d, knots_x, knots_y, lambda, c_regularized, weights)
+%lambda is regularization parameter, e.g. 0.005
+
 if nargin < 8
 	lambda = 0;
+end
+if nargin < 9
+	c_regularized = [];
 end
 
 x=x(:);
 y=y(:);
 zx=zx(:);
 zy=zy(:);
+
+if nargin < 10
+	weights = [];
+else
+    weights = weights(:);
+end
+
 
 xmin = knots_x(1);
 xmax = knots_x(end);
@@ -19,25 +30,17 @@ ty = [repmat(ymin, [1, d]), knots_y, repmat(ymax, [1, d])];
 
 nc_x = numel(knots_x) + d - 1;
 nc_y = numel(knots_y) + d - 1;
-Bx = zeros(numel(x), nc_x*nc_y);
-By = zeros(numel(x), nc_x*nc_y);
 
-
-bspline_der_x = zeros(numel(x), nc_x);
-bspline_der_y = zeros(numel(x), nc_y);
-
-bspline_x = zeros(numel(x), nc_x);
-bspline_y = zeros(numel(x), nc_y);
-
-for j = 1 : nc_x
-	bspline_der_x(:, j) = bspline_der(x, j, d, tx);
-	bspline_x(:, j) = bspline(x, j, d, tx, d);
+if numel(x)*nc_x*nc_y<0.1*1024^3/8
+	Bx = zeros(numel(x), nc_x*nc_y);
+	By = zeros(numel(x), nc_x*nc_y);
+else
+	Bx = spalloc(numel(x), nc_x*nc_y, numel(x)*(d+1)*(d+1)); % точнее рассчиать
+	By = spalloc(numel(x), nc_x*nc_y, numel(x)*(d+1)*(d+1));
 end
 
-for k = 1 : nc_y
-	bspline_der_y(:, k) = bspline_der(y, k, d, ty);
-	bspline_y(:, k) = bspline(y, k, d, ty, d);
-end	
+[bspline_x, bspline_der_x] = bspline_v2( x, nc_x, d, tx);
+[bspline_y, bspline_der_y] = bspline_v2( y, nc_y, d, ty);
 
 for j = 1 : nc_x
     for k = 1 : nc_y
@@ -45,11 +48,28 @@ for j = 1 : nc_x
         By(:, (j - 1)*nc_y + k) = bspline_x(:, j).*bspline_der_y(:, k);
     end
 end
+assert(nnz(Bx) <= numel(x)*(d+1)*(d+1))
+
+
+if ~isempty(weights)
+    BxT = Bx'*diag(sparse(weights));
+    ByT = By'*diag(sparse(weights));
+else
+    BxT = Bx';
+    ByT = By';
+end
 
 %c = (Bx'*Bx+By'*By )\(Bx'*zx + By'*zy);
-c = (Bx'*Bx + By'*By + lambda*eye(nc_x*nc_y)) \ (Bx'*zx + By'*zy);
-
-%minimax
-%c=fminimax(@(c1)abs(Bx*c1-zx)+abs(By*c1-zy), c);
-
-
+if numel(x)*nc_x*nc_y<0.1*1024^3/8
+    if isempty(c_regularized)
+    	c = (BxT*Bx+ ByT*By + lambda*eye(nc_x*nc_y)) \ (BxT*zx + ByT*zy);
+    else
+        c = (BxT*Bx+ ByT*By + lambda*eye(nc_x*nc_y)) \ (BxT*zx + ByT*zy + lambda * c_regularized(:));
+    end
+else
+    if isempty(c_regularized)
+        c = (BxT*Bx+ ByT*By + lambda*speye(nc_x*nc_y)) \ (BxT*zx + ByT*zy);
+    else
+        c = (BxT*Bx+ ByT*By + lambda*speye(nc_x*nc_y)) \ (BxT*zx + ByT*zy + lambda * c_regularized(:));
+    end
+end
