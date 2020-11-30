@@ -4,13 +4,16 @@ xmin = knots(1);
 xmax = knots(end);
 t = [repmat(xmin, [1, d]), knots, repmat(xmax, [1, d])];
 
-ncoeff = numel(knots) + d - 1;
-figure; hold all
+[ f, df ] = bspline_v2( x(:), ncoeff, d, t );
+
+figure
+hold all
 for j = 1 : ncoeff
-    plot(x, bspline(x, j, d, t, d));
+    plot(x(:), f(:,j));
 end
 
-figure; hold all
+figure
+hold all
 for j = 1 : ncoeff
-    plot(x, derBspline(x, j, d, t));
+    plot(x(:), df(:,j));
 end
