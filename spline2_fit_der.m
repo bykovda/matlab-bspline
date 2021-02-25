@@ -31,6 +31,10 @@ ty = [repmat(ymin, [1, d]), knots_y, repmat(ymax, [1, d])];
 nc_x = numel(knots_x) + d - 1;
 nc_y = numel(knots_y) + d - 1;
 
+
+[bspline_x, bspline_der_x] = bspline_v2( x, nc_x, d, tx);
+[bspline_y, bspline_der_y] = bspline_v2( y, nc_y, d, ty);
+
 if numel(x)*nc_x*nc_y<0.1*1024^3/8
 	Bx = zeros(numel(x), nc_x*nc_y);
 	By = zeros(numel(x), nc_x*nc_y);
@@ -47,8 +51,6 @@ else
 	end
 end
 
-[bspline_x, bspline_der_x] = bspline_v2( x, nc_x, d, tx);
-[bspline_y, bspline_der_y] = bspline_v2( y, nc_y, d, ty);
 
 for j = 1 : nc_x
     for k = 1 : nc_y
