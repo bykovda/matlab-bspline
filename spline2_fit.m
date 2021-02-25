@@ -23,7 +23,7 @@ ncoeff_y = numel(knots_y) + d - 1;
 bspline_x = bspline_v2( x, ncoeff_x, d, tx);
 bspline_y = bspline_v2( y, ncoeff_y, d, ty);
 
-b_dense = numel(x)*ncoeff_x*ncoeff_y<0.1*1024^3/8;
+b_dense = numel(x)*ncoeff_x*ncoeff_y<0.1*1024^3/8; % if matrix is less than 100MB then use dense matrices
 
 if b_dense
 	B = zeros(numel(x), ncoeff_x*ncoeff_y);
