@@ -35,8 +35,16 @@ if numel(x)*nc_x*nc_y<0.1*1024^3/8
 	Bx = zeros(numel(x), nc_x*nc_y);
 	By = zeros(numel(x), nc_x*nc_y);
 else
-	Bx = spalloc(numel(x), nc_x*nc_y, numel(x)*(d+1)*(d+1)); % òî÷íåå ðàññ÷èàòü
+	Bx = spalloc(numel(x), nc_x*nc_y, numel(x)*(d+1)*(d+1)); % Ã²Ã®Ã·Ã­Ã¥Ã¥ Ã°Ã Ã±Ã±Ã·Ã¨Ã Ã²Ã¼
 	By = spalloc(numel(x), nc_x*nc_y, numel(x)*(d+1)*(d+1));
+	if nnz(bspline_x)/numel(bspline_x) < 0.1
+		bspline_x = sparse(bspline_x);
+		bspline_der_x = sparse(bspline_der_x);
+	end
+	if nnz(bspline_y)/numel(bspline_y) < 0.1
+		bspline_y = sparse(bspline_y);
+		bspline_der_y = sparse(bspline_der_y);
+	end
 end
 
 [bspline_x, bspline_der_x] = bspline_v2( x, nc_x, d, tx);
