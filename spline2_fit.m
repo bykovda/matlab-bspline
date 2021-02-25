@@ -19,10 +19,17 @@ ty = [repmat(ymin, [1, d]), knots_y, repmat(ymax, [1, d])];
 
 ncoeff_x = numel(knots_x) + d - 1;
 ncoeff_y = numel(knots_y) + d - 1;
-B = zeros(numel(x), ncoeff_x*ncoeff_y);
 
 bspline_x = bspline_v2( x, ncoeff_x, d, tx);
 bspline_y = bspline_v2( y, ncoeff_y, d, ty);
+
+b_dense = numel(x)*ncoeff_x*ncoeff_y<0.1*1024^3/8;
+
+if b_dense
+	B = zeros(numel(x), ncoeff_x*ncoeff_y);
+else
+	B = spalloc(numel(x), ncoeff_x*ncoeff_y, numel(x)*(d+1)*(d+1));
+end
 
 for j = 1 : ncoeff_x
     for k = 1 : ncoeff_y
@@ -30,9 +37,12 @@ for j = 1 : ncoeff_x
     end
 end
 
-if lambda ~= 0
-	c = (B'*B + lambda*eye(ncoeff_x*ncoeff_y))\(B'*z);
+if b_dense
+	if lambda ~= 0
+		c = (B'*B + lambda*eye(ncoeff_x*ncoeff_y))\(B'*z);
+	else
+		c = B\z; 
+	end
 else
-	c = B\z; 
+	c = (B'*B + lambda*speye(ncoeff_x*ncoeff_y))\(B'*z);	
 end
-
