@@ -29,6 +29,8 @@ if b_dense
 	B = zeros(numel(x), ncoeff_x*ncoeff_y);
 else
 	B = spalloc(numel(x), ncoeff_x*ncoeff_y, numel(x)*(d+1)*(d+1));
+	bspline_x = sparse(bspline_x);
+	bspline_y = sparse(bspline_y);
 end
 
 for j = 1 : ncoeff_x
